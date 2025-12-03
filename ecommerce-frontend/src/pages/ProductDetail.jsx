@@ -215,7 +215,7 @@ const ProductDetail = () => {
                 <Typography
                   // Reduced size from h5 to h6
                   variant="h6"
-                  color="primary"
+                  color="green"
                   component="span"
                   sx={{ fontWeight: 700 }}
                 >
@@ -249,7 +249,7 @@ const ProductDetail = () => {
               <Box>
                 <Button
                   variant="contained"
-                  color="primary"
+                  color="green"
                   // Reduced size from large to medium
                   size="medium"
                   onClick={handleAddToCart}
