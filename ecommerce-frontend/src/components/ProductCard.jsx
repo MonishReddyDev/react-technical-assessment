@@ -1,29 +1,59 @@
 const FALLBACK_IMAGE = "./image.png";
 
 const ProductCard = ({ product, onViewDetails, onAddToCart }) => {
-  const id = product.id;
+  const {
+    id,
+    name = "Unnamed product",
+    description,
+    price,
+    compareAtPrice,
+    stock,
+  } = product || {};
 
-  const name = product.name || "No name";
-  const price =
-    typeof product.price === "number"
-      ? product.price.toFixed(2)
-      : product.price || "N/A";
+  const formattedPrice =
+    typeof price === "number" ? price.toFixed(2) : price || "N/A";
 
-  // 👉 Decide if backend actually gave us an image URL
+  const formattedCompareAt =
+    typeof compareAtPrice === "number"
+      ? compareAtPrice.toFixed(2)
+      : compareAtPrice;
+
+  const isOnSale =
+    typeof price === "number" &&
+    typeof compareAtPrice === "number" &&
+    compareAtPrice > price;
+
+  const isOutOfStock = typeof stock === "number" && stock <= 0;
+
+  // Prefer first image from array, then single image field
   const rawImage =
-    (Array.isArray(product.images) && product.images[0]) || product.image || "";
+    (Array.isArray(product?.images) && product.images[0]) ||
+    product?.image ||
+    "";
 
   const hasBackendImage = !!rawImage;
   const primaryImage = hasBackendImage ? rawImage : FALLBACK_IMAGE;
 
   const handleImgError = (e) => {
-    console.log("Image failed, using fallback for:", name);
+    console.warn("Image failed, using fallback for:", name);
     e.target.src = FALLBACK_IMAGE;
     e.target.onerror = null;
   };
 
+  const handleViewDetails = () => {
+    if (onViewDetails && id) onViewDetails(id);
+  };
+
+  const handleAddToCart = () => {
+    if (onAddToCart && !isOutOfStock) onAddToCart(product);
+  };
+
   return (
-    <div className="card">
+    <article
+      className="card product-card"
+      onClick={handleViewDetails}
+      style={{ cursor: onViewDetails ? "pointer" : "default" }}
+    >
       <img
         src={primaryImage}
         alt={name}
@@ -31,34 +61,71 @@ const ProductCard = ({ product, onViewDetails, onAddToCart }) => {
         onError={handleImgError}
       />
 
-      <h3 className="card-title">{name}</h3>
-      <p className="card-price">${price}</p>
+      <div className="card-body" onClick={(e) => e.stopPropagation()}>
+        {/* Title + optional small badge row */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            gap: "0.5rem",
+            alignItems: "flex-start",
+          }}
+        >
+          <h3 className="card-title">{name}</h3>
 
-      {/* Small indicator so we KNOW if backend image is used or not */}
-      <p
-        style={{ fontSize: "0.75rem", color: "#6B7280", margin: "0 0 0.25rem" }}
+          {isOutOfStock ? (
+            <span className="badge badge-muted">Out of stock</span>
+          ) : (
+            stock != null &&
+            stock > 0 && <span className="badge badge-success">In stock</span>
+          )}
+        </div>
+
+        {/* Optional short description */}
+        {description && (
+          <p className="card-meta">
+            {description.length > 80
+              ? `${description.slice(0, 80)}…`
+              : description}
+          </p>
+        )}
+
+        {/* Price row with optional compare-at price */}
+        <div className="card-price-row">
+          <span className="card-price">${formattedPrice}</span>
+          {isOnSale && (
+            <span className="card-price-compare">${formattedCompareAt}</span>
+          )}
+        </div>
+      </div>
+
+      <div
+        className="card-footer"
+        onClick={(e) => {
+          // prevent card click from firing when pressing buttons
+          e.stopPropagation();
+        }}
       >
-        {hasBackendImage ? "Using backend image" : "Using placeholder image"}
-      </p>
-
-      <div className="card-footer">
         <button
+          type="button"
           className="btn btn-secondary btn-sm"
-          onClick={() => onViewDetails && onViewDetails(id)}
+          onClick={handleViewDetails}
         >
           View Details
         </button>
 
         {onAddToCart && (
           <button
+            type="button"
             className="btn btn-primary btn-sm"
-            onClick={() => onAddToCart(product)}
+            disabled={isOutOfStock}
+            onClick={handleAddToCart}
           >
-            Add to Cart
+            {isOutOfStock ? "Unavailable" : "Add to Cart"}
           </button>
         )}
       </div>
-    </div>
+    </article>
   );
 };
 

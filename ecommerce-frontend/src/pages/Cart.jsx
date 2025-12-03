@@ -4,7 +4,6 @@ import { Navigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 
-
 const FALLBACK_CART_IMAGE = "/image.png";
 
 const Cart = () => {

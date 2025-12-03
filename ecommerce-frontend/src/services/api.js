@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:3000/api';
+const API_URL = import.meta.env.VITE_API_URL;
+// import.meta.env
 
 
 const api = axios.create({
@@ -23,12 +24,16 @@ export const login = (email, password) =>
 
 
 // Products APIs
-export const getProducts = (params = {}) =>
-    api.get('/products', { params });
 
 
 export const getProduct = (id) =>
     api.get(`/products/${id}`);
+
+
+export const getProducts = (page = 1, limit = 8) =>
+    api.get("/products", {
+        params: { page, limit },
+    });
 
 
 // --- Cart APIs ---

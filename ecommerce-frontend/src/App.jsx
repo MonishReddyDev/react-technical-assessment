@@ -7,58 +7,41 @@ import Cart from "./pages/Cart";
 import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Profile from "./pages/Profile";
+import NotFound from "./pages/NotFound";
+import { useToast } from "./context/ToastContext";
 
 const App = () => {
+  const { toast, hideToast } = useToast();
   return (
     <div>
       <Navbar />
 
+      {toast && (
+        <div
+          className={`toast toast-${toast.type}`}
+          onClick={hideToast} // click to close manually
+        >
+          {toast.message}
+        </div>
+      )}
+
       <main style={{ padding: "1rem" }}>
         <Routes>
-          {/* Default: go to /products (which is protected) */}
+          {/* Default redirect */}
           <Route path="/" element={<Navigate to="/products" replace />} />
 
           {/* Public route */}
           <Route path="/login" element={<Login />} />
 
-          {/* Protected routes */}
-          <Route
-            path="/products"
-            element={
-              <ProtectedRoute>
-                <Products />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            }
-          />
+          <Route element={<ProtectedRoute />}>
+            <Route path="/products" element={<Products />} />
+            <Route path="/products/:id" element={<ProductDetail />} />
+            <Route path="/cart" element={<Cart />} />
+            <Route path="/profile" element={<Profile />} />
+          </Route>
 
-          <Route
-            path="/products/:id"
-            element={
-              <ProtectedRoute>
-                <ProductDetail />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/cart"
-            element={
-              <ProtectedRoute>
-                <Cart />
-              </ProtectedRoute>
-            }
-          />
-
-          {/* Fallback */}
-          <Route path="*" element={<div>Page not found</div>} />
+          {/* 404 page */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
     </div>
@@ -66,3 +49,5 @@ const App = () => {
 };
 
 export default App;
+
+//Nesting

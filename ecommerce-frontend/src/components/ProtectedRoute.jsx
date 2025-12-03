@@ -1,26 +1,16 @@
-import { Navigate, useLocation } from "react-router-dom";
+import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
-
-const ProtectedRoute = ({ children }) => {
+const ProtectedRoute = () => {
   const { isAuthenticated } = useAuth();
-  const location = useLocation();
 
+  // You can also handle a loading state here if you want
   if (!isAuthenticated) {
-    // Not logged in:
-    // - redirect to /login
-    // - store where the user tried to go (location.state)
-    return (
-      <Navigate
-        to="/login"
-        replace
-        state={{ from: location.pathname + location.search }}
-      />
-    );
+    return <Navigate to="/login" replace />;
   }
 
-  // Logged in -> render original content
-  return children;
+  // If authenticated, render any child route(s)
+  return <Outlet />;
 };
 
 export default ProtectedRoute;

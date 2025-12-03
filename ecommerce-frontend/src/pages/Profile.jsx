@@ -1,13 +1,26 @@
-// src/pages/Profile.jsx
+// src/pages/Profile.jsx - Refactored with Material-UI and Address Fix
 import React, { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { getProfile, updateProfile } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 
+// --- MUI Components ---
+import {
+  Box,
+  Typography,
+  TextField,
+  Button,
+  Paper,
+  CircularProgress,
+  Alert,
+  Stack,
+} from "@mui/material";
+import SaveIcon from "@mui/icons-material/Save";
+// ----------------------
+
 const Profile = () => {
   const { isAuthenticated } = useAuth();
 
-  // Redirect if not logged in (extra safety; route is also protected)
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
@@ -20,10 +33,10 @@ const Profile = () => {
     address: "",
   });
 
-  const [loading, setLoading] = useState(false); // for initial GET
-  const [saving, setSaving] = useState(false); // for PUT
-  const [error, setError] = useState(""); // error message
-  const [success, setSuccess] = useState(""); // success message
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   // Load profile on mount
   const fetchProfile = async () => {
@@ -33,18 +46,24 @@ const Profile = () => {
 
     try {
       const res = await getProfile();
-      console.log("Profile response:", res.data);
 
-      // Backend shape: { success, data: { ...userProfileFields } }
       const body = res.data || {};
       const data = body.data || body;
+
+      // *** FIX IMPLEMENTED HERE ***
+      let addressValue = data.address || "";
+      if (typeof data.address === "object" && data.address !== null) {
+        // Convert the address object to a JSON string for display/editing
+        addressValue = JSON.stringify(data.address);
+      }
+      // ****************************
 
       setProfile({
         email: data.email || "",
         firstName: data.firstName || "",
         lastName: data.lastName || "",
         phone: data.phone || "",
-        address: data.address || "",
+        address: addressValue,
       });
     } catch (err) {
       console.error("Error loading profile:", err);
@@ -58,7 +77,6 @@ const Profile = () => {
 
   useEffect(() => {
     fetchProfile();
-
   }, []);
 
   const handleChange = (e) => {
@@ -73,17 +91,15 @@ const Profile = () => {
     setSuccess("");
 
     try {
-      // We send only updatable fields (email usually not updated here)
+      // Send the current string value of the address input back to the API
       const payload = {
         firstName: profile.firstName,
         lastName: profile.lastName,
         phone: profile.phone,
-        address: profile.address,
+        address: profile.address, // This is the string from the input
       };
 
-      const res = await updateProfile(payload);
-      console.log("Update profile response:", res.data);
-
+      await updateProfile(payload);
       setSuccess("Profile updated successfully.");
     } catch (err) {
       console.error("Error updating profile:", err);
@@ -97,102 +113,123 @@ const Profile = () => {
     }
   };
 
+  // --- RENDERING STATES ---
+
+  const PageHeader = () => (
+    <Box sx={{ mb: 4 }}>
+      <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
+        Profile
+      </Typography>
+      <Typography variant="subtitle1" color="text.secondary">
+        View and update your personal information.
+      </Typography>
+    </Box>
+  );
+
   if (loading) {
     return (
-      <div>
-        <div className="page-header">
-          <h2 className="page-header-title">Profile</h2>
-        </div>
-        <p>Loading profile...</p>
-      </div>
+      <Box sx={{ p: 2, textAlign: "center" }}>
+        <PageHeader />
+        <CircularProgress />
+        <Typography sx={{ mt: 2 }}>Loading profile...</Typography>
+      </Box>
     );
   }
 
-  return (
-    <div>
-      <div className="page-header">
-        <div>
-          <h2 className="page-header-title">Profile</h2>
-          <p className="page-header-subtitle">
-            View and update your personal information.
-          </p>
-        </div>
-      </div>
+  // --- MAIN RENDER ---
 
-      <div className="card" style={{ maxWidth: "520px" }}>
-        <form onSubmit={handleSubmit}>
-          {/* Email (read-only) */}
-          <div className="form-field">
-            <label className="form-label">Email</label>
-            <input
-              className="form-input"
+  return (
+    <Box sx={{ p: { xs: 1, sm: 2 } }}>
+      <PageHeader />
+
+      <Paper
+        elevation={2}
+        sx={{
+          maxWidth: 520,
+          p: 4,
+          borderRadius: 3,
+          mx: { xs: 0, sm: "auto" },
+        }}
+      >
+        <Box component="form" onSubmit={handleSubmit}>
+          <Stack spacing={3}>
+            {/* Email (read-only) */}
+            <TextField
+              fullWidth
+              label="Email"
               type="email"
               name="email"
               value={profile.email}
               disabled
+              helperText="Email cannot be changed."
             />
-          </div>
 
-          <div className="form-field">
-            <label className="form-label">First Name</label>
-            <input
-              className="form-input"
+            <TextField
+              fullWidth
+              label="First Name"
               type="text"
               name="firstName"
               value={profile.firstName}
               onChange={handleChange}
             />
-          </div>
 
-          <div className="form-field">
-            <label className="form-label">Last Name</label>
-            <input
-              className="form-input"
+            <TextField
+              fullWidth
+              label="Last Name"
               type="text"
               name="lastName"
               value={profile.lastName}
               onChange={handleChange}
             />
-          </div>
 
-          <div className="form-field">
-            <label className="form-label">Phone</label>
-            <input
-              className="form-input"
+            <TextField
+              fullWidth
+              label="Phone"
               type="text"
               name="phone"
               value={profile.phone}
               onChange={handleChange}
             />
-          </div>
 
-          <div className="form-field">
-            <label className="form-label">Address</label>
-            <input
-              className="form-input"
+            <TextField
+              fullWidth
+              label="Address"
               type="text"
               name="address"
               value={profile.address}
               onChange={handleChange}
+              multiline
+              rows={2}
+              helperText="If the address contains structured data, edit the JSON string directly."
             />
-          </div>
+          </Stack>
 
-          {error && <p className="form-error">{error}</p>}
-          {success && (
-            <p style={{ color: "#15803d", fontSize: "0.85rem" }}>{success}</p>
-          )}
+          {/* Feedback Messages */}
+          <Box sx={{ mt: 3, mb: 2 }}>
+            {error && <Alert severity="error">{error}</Alert>}
+            {success && <Alert severity="success">{success}</Alert>}
+          </Box>
 
-          <button
+          {/* Save Button */}
+          <Button
             type="submit"
-            className="btn btn-primary"
+            fullWidth
+            variant="contained"
+            color="green"
+            size="large"
             disabled={saving}
-            style={{ marginTop: "0.25rem" }}
+            startIcon={saving ? null : <SaveIcon />}
+            sx={{ borderRadius: 8, py: 1.5, mt: 1 }}
           >
-            {saving ? "Saving..." : "Save Changes"}
-          </button>
-        </form>
-      </div>
-    </div>
+            {saving ? (
+              <CircularProgress size={24} color="inherit" />
+            ) : (
+              "Save Changes"
+            )}
+          </Button>
+        </Box>
+      </Paper>
+    </Box>
   );
 };
 
